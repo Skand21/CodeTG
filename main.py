@@ -7,13 +7,13 @@ from telebot import types
 # Обработка команды /start
 @botTimeWeb.message_handler(commands=['start'])
 def startBot(message):
-    first_mess = f"Привет, <b>{message.from_user.first_name}</b>!\nЯ бот, который помогает с решением школьных задач и отслеживает твой прогресс.\nСообщи, учитель ты или ученик."
+    first_mess = f"Привет, <b>{message.from_user.first_name}</b>!\nЯ бот, который помогает с изучением языка С++ и отслеживает твой прогресс. Выберите с чего хотите начать"
     markup = types.InlineKeyboardMarkup()
-    button_teacher = types.InlineKeyboardButton(text='Учитель', callback_data='teacher')
-    button_student = types.InlineKeyboardButton(text='Ученик', callback_data='student')
+    button_hochutest = types.InlineKeyboardButton(text='Узнать свой уровень', callback_data='test')
+    button_nehochutest = types.InlineKeyboardButton(text='Обучиться с нуля', callback_data='nol')
 
-    markup.add(button_teacher)
-    markup.add(button_student)
+    markup.add(button_hochutest)
+    markup.add(button_nehochutest)
     botTimeWeb.send_message(message.chat.id, first_mess, parse_mode='html', reply_markup=markup)
 
 #1
@@ -21,13 +21,22 @@ def startBot(message):
 # Обработка нажатия на кнопки "Учитель" и "Ученик"
 @botTimeWeb.callback_query_handler(func=lambda call: True)
 def handle_query(call):
-    if call.data == 'teacher':
+    if call.data == 'test':
         # Если выбрано "Учитель", просим ввести код
-        botTimeWeb.send_message(call.message.chat.id, "Пожалуйста, введите ваш код.")
+        botTimeWeb.send_message(call.message.chat.id, ".")
         botTimeWeb.register_next_step_handler(call.message, get_teacher_code)
-    elif call.data == 'student':
+        for question in range(1,11):
+            text = f"Вопрос {question}"
+            markup = types.InlineKeyboardMarkup()
+            button_hochutest = types.InlineKeyboardButton(text='Узнать свой уровень', callback_data='test')
+            button_nehochutest = types.InlineKeyboardButton(text='Обучиться с нуля', callback_data='nol')
+
+            markup.add(button_hochutest)
+            markup.add(button_nehochutest)
+            botTimeWeb.send_message(call.message.chat.id, text, parse_mode='html', reply_markup=markup)
+    elif call.data == 'nol':
         # Если выбран "Ученик", просим ввести класс
-        botTimeWeb.send_message(call.message.chat.id, "В каком ты классе?")
+        botTimeWeb.send_message(call.message.chat.id, "")
         botTimeWeb.register_next_step_handler(call.message, get_student_class)
 
 # Обработка ввода кода учителя
