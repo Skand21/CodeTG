@@ -145,7 +145,7 @@ def define_level(correctotveti):
     if correctotveti == 1 or correctotveti == 2 or correctotveti == 3:
         return('Вы новичок')
     elif correctotveti == 4 or correctotveti == 5 or correctotveti == 6:
-        return('Вы знаете что - то, но вы далеко не Стив Джобс')
+        return('Вы знаете что - то, но вы далеко не Виталик Бутерин')
     elif correctotveti == 7 or correctotveti == 8:
         return('Вы много знаете, но есть ещё над чем работать')
     elif correctotveti == 9 or correctotveti == 10:
