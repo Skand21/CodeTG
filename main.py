@@ -111,7 +111,7 @@ def ask_question(chat_id, user_id):
 
     else:
         botTimeWeb.send_message(chat_id, f"Тест завершен! Ваш результат: {correctotveti} / 10")
-        botTimeWeb.send_message(chat_id, level(correctotveti))
+        botTimeWeb.send_message(chat_id, define_level(correctotveti))
 
 
 # Функция для проверки ответа
@@ -123,7 +123,7 @@ def check_answer(call):
     # Проверка, что индекс находится в пределах списка вопросов
     if index >= len(questions):
         botTimeWeb.send_message(call.message.chat.id, "Тест завершен!")
-        botTimeWeb.send_message(call.message.chat.id, level(correctotveti))
+        botTimeWeb.send_message(call.message.chat.id, define_level(correctotveti))
         return
 
     # Убираем клавиатуру после выбора ответа
@@ -141,7 +141,7 @@ def check_answer(call):
     current_question_index[user_id] += 1
     ask_question(call.message.chat.id, user_id)
 
-def level(correctotveti):
+def define_level(correctotveti):
     if correctotveti == 1 or correctotveti == 2 or correctotveti == 3:
         return('Вы новичок')
     elif correctotveti == 4 or correctotveti == 5 or correctotveti == 6:
@@ -150,10 +150,6 @@ def level(correctotveti):
         return('Вы много знаете, но есть ещё над чем работать')
     elif correctotveti == 9 or correctotveti == 10:
         return('Вы всё знаете! Для изучения нового ИИ выдаст вам самые сложные задачи ')
-
-# Обработка ввода класса ученика
-
-
 
 # Запуск бота
 botTimeWeb.polling(none_stop=True)
