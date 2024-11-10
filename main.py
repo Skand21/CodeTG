@@ -131,13 +131,13 @@ def check_answer(call):
     current_question_index[user_id] += 1
     ask_question(call.message.chat.id, user_id)
 def level(correctotveti):
-    if correctotveti == 1 or  2 or 3:
+    if correctotveti == 1 or correctotveti == 2 or correctotveti == 3:
         return('Вы новичок')
-    elif correctotveti == 4 or 5 or 6:
+    elif correctotveti == 4 or correctotveti == 5 or correctotveti == 6:
         return('Вы знаете что - то, но вы далеко не Стив Джобс')
-    elif correctotveti == 7 or 8:
+    elif correctotveti == 7 or correctotveti == 8:
         return('Вы много знаете, но есть ещё над чем работать')
-    elif correctotveti == 9 or 10:
+    elif correctotveti == 9 or correctotveti == 10:
         return('Вы всё знаете! Для изучения нового ИИ выдаст вам самые сложные задачи ')
 
 # Обработка ввода класса ученика
