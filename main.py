@@ -119,6 +119,16 @@ def check_answer(call):
     global correctotveti
     user_id = call.from_user.id
     index = current_question_index.get(user_id, 0)
+
+    # Проверка, что индекс находится в пределах списка вопросов
+    if index >= len(questions):
+        botTimeWeb.send_message(call.message.chat.id, "Тест завершен!")
+        botTimeWeb.send_message(call.message.chat.id, level(correctotveti))
+        return
+
+    # Убираем клавиатуру после выбора ответа
+    botTimeWeb.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+
     correct_answer = questions[index]["correct"]
 
     if call.data == correct_answer:
@@ -130,6 +140,7 @@ def check_answer(call):
     # Переход к следующему вопросу
     current_question_index[user_id] += 1
     ask_question(call.message.chat.id, user_id)
+
 def level(correctotveti):
     if correctotveti == 1 or correctotveti == 2 or correctotveti == 3:
         return('Вы новичок')
