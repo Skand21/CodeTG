@@ -91,9 +91,9 @@ def handle_query(call):
         ask_question(call.message.chat.id, call.from_user.id)
     elif call.data == 'nol':
         botTimeWeb.send_message(call.message.chat.id, "Отлично, начинаем с нуля!")
-        botTimeWeb.register_next_step_handler(call.message, get_student_class)
     elif call.data in ['true', 'false']:
         check_answer(call)
+
 
 # Функция для задания вопроса
 def ask_question(chat_id, user_id):
@@ -108,8 +108,11 @@ def ask_question(chat_id, user_id):
             markup.add(types.InlineKeyboardButton(text=answer["text"], callback_data=answer["callback_data"]))
 
         botTimeWeb.send_message(chat_id, text, parse_mode='html', reply_markup=markup)
+
     else:
         botTimeWeb.send_message(chat_id, f"Тест завершен! Ваш результат: {correctotveti} / 10")
+        botTimeWeb.send_message(chat_id, level(correctotveti))
+
 
 # Функция для проверки ответа
 def check_answer(call):
@@ -127,11 +130,19 @@ def check_answer(call):
     # Переход к следующему вопросу
     current_question_index[user_id] += 1
     ask_question(call.message.chat.id, user_id)
+def level(correctotveti):
+    if correctotveti == 1 or  2 or 3:
+        return('Вы новичок')
+    elif correctotveti == 4 or 5 or 6:
+        return('Вы знаете что - то, но вы далеко не Стив Джобс')
+    elif correctotveti == 7 or 8:
+        return('Вы много знаете, но есть ещё над чем работать')
+    elif correctotveti == 9 or 10:
+        return('Вы всё знаете! Для изучения нового ИИ выдаст вам самые сложные задачи ')
 
 # Обработка ввода класса ученика
-def get_student_class(message):
-    student_class = message.text
-    botTimeWeb.send_message(message.chat.id, f"Отлично! Ты в {student_class} классе. Добро пожаловать!")
+
+
 
 # Запуск бота
 botTimeWeb.polling(none_stop=True)
