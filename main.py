@@ -225,9 +225,9 @@ def Answer(system, topic):
 expert_promt = load_prompt('ccылка на промпт')
 
 # Handle '/start' and '/help'
-@bot.message_handler(commands=['help', 'start'])
+@botTimeWeb.message_handler(commands=['help', 'start'])
 def send_welcome(message):
-    bot.reply_to(message, """\
+    botTimeWeb.reply_to(message, """\
 Здравствуйте, Я Мария Абогада! Я могу давать юридические советы исходя из того как был сформулирован вопрос.
 Рекомендую вам проверять полученные вопросы на очной консультации у адвоката, который сможет изучить ваши документы. \ """
 # Запуск бота
