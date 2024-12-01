@@ -1,5 +1,8 @@
 #!pip install langchain-gigachat
 #!pip install pytelegrambotapi
+#1pip install -U langchain-community
+#!pip install -U langchain langchain_community
+#!pip install gigachat
 
 #@title Установка библиотек. Сервисные функции
 # !pip -q install --upgrade tiktoken
@@ -12,7 +15,7 @@
 
 #GigaChat
 from langchain.schema import HumanMessage, SystemMessage
-from langchain.chat_models.gigachat import GigaChat
+from langchain_community.chat_models.gigachat import GigaChat
 
 import requests
 import pathlib
@@ -183,12 +186,8 @@ def define_level(correctotveti):
         return('Вы всё знаете! Для изучения нового ИИ выдаст вам самые сложные задачи ')
 
 giga = GigaChat(
-    credentials="a7eeca6a-6b20-4ff0-8c5f-1b3fe2d3b902",
-    scope="GIGACHAT_API_PERS",
-    model="GigaChat",
-    streaming=False,
-    verify_ssl_certs=False,
-)
+    credentials="YTdlZWNhNmEtNmIyMC00ZmYwLThjNWYtMWIzZmUyZDNiOTAyOmQyMDQxNTRjLTNlOGYtNGFmNy1iOTFmLTU0NGE1OGFjMjg1Yg==", verify_ssl_certs=False)
+
 def load_prompt(url):
     # Extract the document ID from the URL
     match_ = re.search('/document/d/([a-zA-Z0-9-_]+)', url)
