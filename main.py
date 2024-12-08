@@ -1,42 +1,9 @@
-#!pip install langchain-gigachat
-#!pip install pytelegrambotapi
-#1pip install -U langchain-community
-#!pip install -U langchain langchain_community
-#!pip install gigachat
-
-#@title Установка библиотек. Сервисные функции
-# !pip -q install --upgrade tiktoken
-# #!pip -q install langchain openai chromadb
-# !pip -q install gspread oauth2client
-# !pip install gigachain-cli
-#
-# # привет Минцифры
-# !gigachain install-rus-certs
-
-#GigaChat
-from langchain.schema import HumanMessage, SystemMessage
-from langchain_community.chat_models.gigachat import GigaChat
-
-import requests
-import pathlib
-import subprocess
-import tempfile
-# import ipywidgets as widgets
-import os
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-import re
-
-import os
-#import openai
-import tiktoken
-import re
-
+from gigachat import GigaChat
 import telebot
 from telebot import types
 
 botTimeWeb = telebot.TeleBot('7463534277:AAHZ29LmrJIwzFTPmJ5h-s1UzmjJ3Brzoi4')
-
+user_status = {}
 
 # Список вопросов и ответов
 correctotveti = 0
@@ -120,11 +87,14 @@ def startBot(message):
 # Обработка нажатия на кнопки "Узнать уровень" и "Обучиться с нуля"
 @botTimeWeb.callback_query_handler(func=lambda call: True)
 def handle_query(call):
+    user_id = call.from_user.id
     if call.data == 'test':
-        current_question_index[call.from_user.id] = 0  # Начинаем с первого вопроса
-        ask_question(call.message.chat.id, call.from_user.id)
+        current_question_index[user_id] = 0  # Начинаем с первого вопроса
+        user_status[user_id] = 'testing'  # Устанавливаем статус тестирования
+        ask_question(call.message.chat.id, user_id)
     elif call.data == 'nol':
         botTimeWeb.send_message(call.message.chat.id, "Отлично, начинаем с нуля!")
+        user_status[user_id] = 'learning'  # Устанавливаем статус обучения
     elif call.data in ['true', 'false']:
         check_answer(call)
 
@@ -146,6 +116,8 @@ def ask_question(chat_id, user_id):
     else:
         botTimeWeb.send_message(chat_id, f"Тест завершен! Ваш результат: {correctotveti} / 10")
         botTimeWeb.send_message(chat_id, define_level(correctotveti))
+        user_status[user_id] = 'ready'  # Устанавливаем статус готовности
+
 
 
 # Функция для проверки ответа
@@ -185,45 +157,34 @@ def define_level(correctotveti):
     elif correctotveti == 9 or correctotveti == 10:
         return('Вы всё знаете! Для изучения нового ИИ выдаст вам самые сложные задачи ')
 
-giga = GigaChat(
-    credentials="YTdlZWNhNmEtNmIyMC00ZmYwLThjNWYtMWIzZmUyZDNiOTAyOmQyMDQxNTRjLTNlOGYtNGFmNy1iOTFmLTU0NGE1OGFjMjg1Yg==", verify_ssl_certs=False)
-
-def load_prompt(url):
-    # Extract the document ID from the URL
-    match_ = re.search('/document/d/([a-zA-Z0-9-_]+)', url)
-    if match_ is None:
-        raise ValueError('Invalid Google Docs URL')
-    doc_id = match_.group(1)
 
 
-  # Download the document as plain text
-    response = requests.get(f'https://docs.google.com/document/d/{doc_id}/export?format=txt')
-    response.raise_for_status()
-    text = response.text
-    return f'{text}'
-from langchain.schema import HumanMessage, SystemMessage
-from langchain.chat_models.gigachat import GigaChat
+@botTimeWeb.message_handler(content_types=['text'])
+def start_Giga(message):
+    user_id = message.from_user.id
+    if user_status.get(user_id) == 'ready':  # Проверяем, завершил ли пользователь тест
+        print("Включили тест с запросом:", message.text)
+        user_message = message.text  # Текст от пользователя
+        botTimeWeb.send_message(message.chat.id, "Ваш запрос отправляется на обработку...")
 
-def Answer(system, topic):
+        # Вызов GigaChat для получения ответа
+        try:
+            with GigaChat(
+                    credentials="YTdlZWNhNmEtNmIyMC00ZmYwLThjNWYtMWIzZmUyZDNiOTAyOmQyMDQxNTRjLTNlOGYtNGFmNy1iOTFmLTU0NGE1OGFjMjg1Yg==",
+                    verify_ssl_certs=False) as giga:
+                response = giga.chat(user_message)
+                bot_reply = response.choices[0].message.content  # Ответ от GigaChat
+                botTimeWeb.send_message(message.chat.id, bot_reply, parse_mode='Markdown')  # Отправка ответа пользователю
+        except Exception as e:
+            botTimeWeb.send_message(message.chat.id, f"Произошла ошибка вида: {e}. Попробуйте позже!")
+            print(f"Произошла ошибка: {e}.")
+    else:
+        botTimeWeb.send_message(message.chat.id, "Я пока не понимаю этой команды. Завершите тестирование, чтобы продолжить!")
 
-#"""Пример работы с чатом через gigachain"""
-    # Авторизация в сервисе GigaChat
-    chat = GigaChat(credentials="Токен Cбера==", verify_ssl_certs=False)
-
-    messages = [SystemMessage(content=system)]
-
-    messages.append(HumanMessage(content=topic))
-    res = chat(messages)
-    messages.append(res)
-    print("User: ", topic)
-    print("Bot: ", res.content)
-    return res.content
-expert_promt = load_prompt('https://docs.google.com/document/d/1itjBPTT3Dhw1ANRsw_Q8OtiyFl2hSK7RqX9Ogp4NCUQ/edit?usp=sharing')
-
-# Handle '/start' and '/help'
-@botTimeWeb.message_handler(commands=['ngiga'])
-def send_welcome(message):
-    botTimeWeb.reply_to(message, """\
-Привет! Я Нгига 🍌!) Я помогу изучить тебе С++ в зависимости от твоего лвла знания ! \ """)
 # Запуск бота
-botTimeWeb.polling(none_stop=True)
+if __name__ == "__main__":
+    print("Бот запущен и ожидает сообщения...")
+    try:
+        botTimeWeb.polling(none_stop=True, interval=0)
+    except KeyboardInterrupt:
+        print("Бот остановлен вручную.")
