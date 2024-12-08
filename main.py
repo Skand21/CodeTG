@@ -210,9 +210,7 @@ def Answer(system, topic):
     # Авторизация в сервисе GigaChat
     chat = GigaChat(credentials="Токен Cбера==", verify_ssl_certs=False)
 
-    messages = [
-        SystemMessage(content=system)
-    ]
+    messages = [SystemMessage(content=system)]
 
     messages.append(HumanMessage(content=topic))
     res = chat(messages)
@@ -220,14 +218,12 @@ def Answer(system, topic):
     print("User: ", topic)
     print("Bot: ", res.content)
     return res.content
-# TODO: вставить ссылку на промт в гугл документах
 expert_promt = load_prompt('https://docs.google.com/document/d/1itjBPTT3Dhw1ANRsw_Q8OtiyFl2hSK7RqX9Ogp4NCUQ/edit?usp=sharing')
 
 # Handle '/start' and '/help'
 @botTimeWeb.message_handler(commands=['ngiga'])
 def send_welcome(message):
     botTimeWeb.reply_to(message, """\
-Здравствуйте, Я Мария Абогада! Я могу давать юридические советы исходя из того как был сформулирован вопрос.
-Рекомендую вам проверять полученные вопросы на очной консультации у адвоката, который сможет изучить ваши документы. \ """)
+Привет! Я Нгига 🍌!) Я помогу изучить тебе С++ в зависимости от твоего лвла знания ! \ """)
 # Запуск бота
 botTimeWeb.polling(none_stop=True)
