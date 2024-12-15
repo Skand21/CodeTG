@@ -1,10 +1,37 @@
 from gigachat import GigaChat
 import telebot
 from telebot import types
+import requests
+import re
 
 botTimeWeb = telebot.TeleBot('7463534277:AAHZ29LmrJIwzFTPmJ5h-s1UzmjJ3Brzoi4')
 user_status = {}
 user_scores = {}  # Новый словарь для хранения баллов каждого пользователя
+
+# Промпт (будет загружен из Google Docs)
+prompt_text = ""
+
+# Ссылка на Google Docs документ с промптом
+google_docs_url = "https://docs.google.com/document/d/1itjBPTT3Dhw1ANRsw_Q8OtiyFl2hSK7RqX9Ogp4NCUQ/edit?usp=sharing"
+
+first_giga = 0
+# Функция для загрузки промпта из Google Docs
+def load_prompt(url):
+    # Извлекаем ID документа из URL
+    match_ = re.search('/document/d/([a-zA-Z0-9-_]+)', url)
+    if match_ is None:
+        raise ValueError('Invalid Google Docs URL')
+    doc_id = match_.group(1)
+
+    # Загружаем документ как обычный текст
+    response = requests.get(f'https://docs.google.com/document/d/{doc_id}/export?format=txt')
+    response.raise_for_status()  # Проверяем, что запрос успешен
+    text = response.text
+    return text
+
+
+# Загружаем промпт при старте бота (но не выводим его сразу пользователю)
+prompt_text = load_prompt(google_docs_url)
 
 # Список вопросов и ответов
 questions = [
@@ -96,7 +123,7 @@ def handle_query(call):
         ask_question(call.message.chat.id, user_id)
     elif call.data == 'nol':
         botTimeWeb.send_message(call.message.chat.id, "Отлично, начинаем с нуля!")
-        user_status[user_id] = 'learning'  # Устанавливаем статус обучения
+        user_status[user_id] = 'ready'  # Устанавливаем статус обучения
     elif call.data == 'marat':
         botTimeWeb.send_message(call.message.chat.id, "ЗДЕСЬ ДОЛЖНО БЫТЬ НАПИСАНО, КАК БУДЕТ ПРОИСХОДИТЬ ОБУЧЕНИЕ")
         user_status[user_id] = 'ready'
@@ -164,6 +191,48 @@ def define_level(correctotveti):
         return('Вы много знаете, но есть ещё над чем работать')
     elif correctotveti == 9 or correctotveti == 10:
         return('Вы всё знаете! Для изучения нового ИИ выдаст вам самые сложные задачи')
+
+
+@botTimeWeb.message_handler(content_types=['text'])
+def start_Giga(message):
+    global first_giga
+    user_id = message.from_user.id
+
+    if first_giga == 0:
+        first_giga = 1
+        try:
+            with GigaChat(
+                    credentials="YTdlZWNhNmEtNmIyMC00ZmYwLThjNWYtMWIzZmUyZDNiOTAyOmQyMDQxNTRjLTNlOGYtNGFmNy1iOTFmLTU0NGE1OGFjMjg1Yg==",
+                    verify_ssl_certs=False) as giga:
+                response = giga.chat(prompt_text)
+                bot_reply = response.choices[0].message.content  # Ответ от GigaChat
+                botTimeWeb.send_message(message.chat.id, bot_reply,
+                                        parse_mode='Markdown')  # Отправка ответа пользователю
+        except Exception as e:
+            botTimeWeb.send_message(message.chat.id, f"Произошла ошибка вида: {e}. Попробуйте позже!")
+            print(f"Произошла ошибка: {e}.")
+
+    if user_status.get(user_id) == 'ready':  # Проверяем, завершил ли пользователь тест
+        print("Включили тест с запросом:", message.text)
+        user_message = message.text  # Текст от пользователя
+        botTimeWeb.send_message(message.chat.id, "Ваш запрос отправляется на обработку...")
+
+        # Вызов GigaChat для получения ответа
+        try:
+            with GigaChat(
+                    credentials="YTdlZWNhNmEtNmIyMC00ZmYwLThjNWYtMWIzZmUyZDNiOTAyOmQyMDQxNTRjLTNlOGYtNGFmNy1iOTFmLTU0NGE1OGFjMjg1Yg==",
+                    verify_ssl_certs=False) as giga:
+                response = giga.chat(user_message)
+                bot_reply = response.choices[0].message.content  # Ответ от GigaChat
+                botTimeWeb.send_message(message.chat.id, bot_reply,
+                                        parse_mode='Markdown')  # Отправка ответа пользователю
+        except Exception as e:
+            botTimeWeb.send_message(message.chat.id, f"Произошла ошибка вида: {e}. Попробуйте позже!")
+            print(f"Произошла ошибка: {e}.")
+    else:
+        botTimeWeb.send_message(message.chat.id,
+                                "Я пока не понимаю этой команды. Завершите тестирование, чтобы продолжить!")
+
 
 # Запуск бота
 if __name__ == "__main__":
