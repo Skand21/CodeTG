@@ -6,7 +6,7 @@ botTimeWeb = telebot.TeleBot('7463534277:AAHZ29LmrJIwzFTPmJ5h-s1UzmjJ3Brzoi4')
 user_status = {}
 
 # Список вопросов и ответов
-correctotveti = 0
+correctotveti= 0
 questions = [
     {"text": "Что такое переменная в C++?", "correct": "true", "answers": [
         {"text": "Переменная - это место в памяти, где хранится значение", "callback_data": "true"},
@@ -91,10 +91,14 @@ def handle_query(call):
     if call.data == 'test':
         current_question_index[user_id] = 0  # Начинаем с первого вопроса
         user_status[user_id] = 'testing'  # Устанавливаем статус тестирования
+        correctotveti = 0
         ask_question(call.message.chat.id, user_id)
     elif call.data == 'nol':
         botTimeWeb.send_message(call.message.chat.id, "Отлично, начинаем с нуля!")
         user_status[user_id] = 'learning'  # Устанавливаем статус обучения
+    elif call.data == 'marat':
+        botTimeWeb.send_message(call.message.chat.id, "ЗДЕСЬ ДОЛЖНО БЫТЬ НАПИСАНО, КАК БУДЕТ ПРОИСХОДИТЬ ОБУЧЕНИЕ")
+        user_status[user_id] = 'ready'
     elif call.data in ['true', 'false']:
         check_answer(call)
 
@@ -116,8 +120,16 @@ def ask_question(chat_id, user_id):
     else:
         botTimeWeb.send_message(chat_id, f"Тест завершен! Ваш результат: {correctotveti} / 10")
         botTimeWeb.send_message(chat_id, define_level(correctotveti))
-        user_status[user_id] = 'ready'  # Устанавливаем статус готовности
 
+
+        neperv_mess = "КРАСАВА МАРАТ, ты прошёл тест, нажимай кнопку и начинай обучение"
+        markup = types.InlineKeyboardMarkup()
+        button_obuchenijemarata = types.InlineKeyboardButton(text='НАЧАТЬ ОБУЧЕНИЕ', callback_data='marat')
+
+
+        markup.add(button_obuchenijemarata)
+
+        botTimeWeb.send_message(chat_id, neperv_mess, parse_mode='html', reply_markup=markup)
 
 
 # Функция для проверки ответа
