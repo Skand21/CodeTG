@@ -4,9 +4,9 @@ from telebot import types
 
 botTimeWeb = telebot.TeleBot('7463534277:AAHZ29LmrJIwzFTPmJ5h-s1UzmjJ3Brzoi4')
 user_status = {}
+user_scores = {}  # Новый словарь для хранения баллов каждого пользователя
 
 # Список вопросов и ответов
-correctotveti= 0
 questions = [
     {"text": "Что такое переменная в C++?", "correct": "true", "answers": [
         {"text": "Переменная - это место в памяти, где хранится значение", "callback_data": "true"},
@@ -69,6 +69,7 @@ questions = [
         {"text": "Создает переменную", "callback_data": "false"},
     ]}
 ]
+
 # Переменная для отслеживания текущего вопроса
 current_question_index = {}
 
@@ -91,7 +92,7 @@ def handle_query(call):
     if call.data == 'test':
         current_question_index[user_id] = 0  # Начинаем с первого вопроса
         user_status[user_id] = 'testing'  # Устанавливаем статус тестирования
-        correctotveti = 0
+        user_scores[user_id] = 0  # Сброс баллов для нового теста
         ask_question(call.message.chat.id, user_id)
     elif call.data == 'nol':
         botTimeWeb.send_message(call.message.chat.id, "Отлично, начинаем с нуля!")
@@ -101,7 +102,6 @@ def handle_query(call):
         user_status[user_id] = 'ready'
     elif call.data in ['true', 'false']:
         check_answer(call)
-
 
 # Функция для задания вопроса
 def ask_question(chat_id, user_id):
@@ -118,30 +118,26 @@ def ask_question(chat_id, user_id):
         botTimeWeb.send_message(chat_id, text, parse_mode='html', reply_markup=markup)
 
     else:
-        botTimeWeb.send_message(chat_id, f"Тест завершен! Ваш результат: {correctotveti} / 10")
-        botTimeWeb.send_message(chat_id, define_level(correctotveti))
-
+        result = user_scores[user_id]
+        botTimeWeb.send_message(chat_id, f"Тест завершен! Ваш результат: {result} / {len(questions)}")
+        botTimeWeb.send_message(chat_id, define_level(result))
 
         neperv_mess = "КРАСАВА МАРАТ, ты прошёл тест, нажимай кнопку и начинай обучение"
         markup = types.InlineKeyboardMarkup()
         button_obuchenijemarata = types.InlineKeyboardButton(text='НАЧАТЬ ОБУЧЕНИЕ', callback_data='marat')
-
-
         markup.add(button_obuchenijemarata)
 
         botTimeWeb.send_message(chat_id, neperv_mess, parse_mode='html', reply_markup=markup)
 
-
 # Функция для проверки ответа
 def check_answer(call):
-    global correctotveti
     user_id = call.from_user.id
     index = current_question_index.get(user_id, 0)
 
     # Проверка, что индекс находится в пределах списка вопросов
     if index >= len(questions):
         botTimeWeb.send_message(call.message.chat.id, "Тест завершен!")
-        botTimeWeb.send_message(call.message.chat.id, define_level(correctotveti))
+        botTimeWeb.send_message(call.message.chat.id, define_level(user_scores[user_id]))
         return
 
     # Убираем клавиатуру после выбора ответа
@@ -151,7 +147,7 @@ def check_answer(call):
 
     if call.data == correct_answer:
         botTimeWeb.send_message(call.message.chat.id, "Правильный ответ!")
-        correctotveti += 1
+        user_scores[user_id] += 1  # Увеличиваем баллы для конкретного пользователя
     else:
         botTimeWeb.send_message(call.message.chat.id, "Неправильный ответ.")
 
@@ -163,35 +159,11 @@ def define_level(correctotveti):
     if correctotveti == 1 or correctotveti == 2 or correctotveti == 3:
         return('Вы новичок')
     elif correctotveti == 4 or correctotveti == 5 or correctotveti == 6:
-        return('Вы знаете что - то, но вы далеко не Виталик Бутерин')
+        return('Вы знаете что-то, но вы далеко не Виталик Бутерин')
     elif correctotveti == 7 or correctotveti == 8:
         return('Вы много знаете, но есть ещё над чем работать')
     elif correctotveti == 9 or correctotveti == 10:
-        return('Вы всё знаете! Для изучения нового ИИ выдаст вам самые сложные задачи ')
-
-
-
-@botTimeWeb.message_handler(content_types=['text'])
-def start_Giga(message):
-    user_id = message.from_user.id
-    if user_status.get(user_id) == 'ready':  # Проверяем, завершил ли пользователь тест
-        print("Включили тест с запросом:", message.text)
-        user_message = message.text  # Текст от пользователя
-        botTimeWeb.send_message(message.chat.id, "Ваш запрос отправляется на обработку...")
-
-        # Вызов GigaChat для получения ответа
-        try:
-            with GigaChat(
-                    credentials="YTdlZWNhNmEtNmIyMC00ZmYwLThjNWYtMWIzZmUyZDNiOTAyOmQyMDQxNTRjLTNlOGYtNGFmNy1iOTFmLTU0NGE1OGFjMjg1Yg==",
-                    verify_ssl_certs=False) as giga:
-                response = giga.chat(user_message)
-                bot_reply = response.choices[0].message.content  # Ответ от GigaChat
-                botTimeWeb.send_message(message.chat.id, bot_reply, parse_mode='Markdown')  # Отправка ответа пользователю
-        except Exception as e:
-            botTimeWeb.send_message(message.chat.id, f"Произошла ошибка вида: {e}. Попробуйте позже!")
-            print(f"Произошла ошибка: {e}.")
-    else:
-        botTimeWeb.send_message(message.chat.id, "Я пока не понимаю этой команды. Завершите тестирование, чтобы продолжить!")
+        return('Вы всё знаете! Для изучения нового ИИ выдаст вам самые сложные задачи')
 
 # Запуск бота
 if __name__ == "__main__":
