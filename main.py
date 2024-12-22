@@ -13,7 +13,7 @@ prompt_text = ""
 
 # Ссылка на Google Docs документ с промптом
 google_docs_url = "https://docs.google.com/document/d/1itjBPTT3Dhw1ANRsw_Q8OtiyFl2hSK7RqX9Ogp4NCUQ/edit?usp=sharing"
-
+result_test = 'у пользователя нулевой уровень и знание языка'
 first_giga = 0
 # Функция для загрузки промпта из Google Docs
 def load_prompt(url):
@@ -115,6 +115,7 @@ def startBot(message):
 # Обработка нажатия на кнопки "Узнать уровень" и "Обучиться с нуля"
 @botTimeWeb.callback_query_handler(func=lambda call: True)
 def handle_query(call):
+    global result_test
     user_id = call.from_user.id
     if call.data == 'test':
         current_question_index[user_id] = 0  # Начинаем с первого вопроса
@@ -125,7 +126,7 @@ def handle_query(call):
         botTimeWeb.send_message(call.message.chat.id, "Отлично, начинаем с нуля!")
         user_status[user_id] = 'ready'  # Устанавливаем статус обучения
     elif call.data == 'marat':
-        botTimeWeb.send_message(call.message.chat.id, "ЗДЕСЬ ДОЛЖНО БЫТЬ НАПИСАНО, КАК БУДЕТ ПРОИСХОДИТЬ ОБУЧЕНИЕ")
+        start_Giga(result_test) #приди пжлст
         user_status[user_id] = 'ready'
     elif call.data in ['true', 'false']:
         check_answer(call)
@@ -133,6 +134,7 @@ def handle_query(call):
 # Функция для задания вопроса
 def ask_question(chat_id, user_id):
     index = current_question_index.get(user_id, 0)
+    global result_test
     if index < len(questions):
         question = questions[index]
         text = question["text"]
@@ -147,7 +149,8 @@ def ask_question(chat_id, user_id):
     else:
         result = user_scores[user_id]
         botTimeWeb.send_message(chat_id, f"Тест завершен! Ваш результат: {result} / {len(questions)}")
-        botTimeWeb.send_message(chat_id, define_level(result))
+        result_test = define_level(result)
+        botTimeWeb.send_message(chat_id, result_test)
 
         neperv_mess = "КРАСАВА МАРАТ, ты прошёл тест, нажимай кнопку и начинай обучение"
         markup = types.InlineKeyboardMarkup()
@@ -205,9 +208,7 @@ def start_Giga(message):
                     credentials="YTdlZWNhNmEtNmIyMC00ZmYwLThjNWYtMWIzZmUyZDNiOTAyOmQyMDQxNTRjLTNlOGYtNGFmNy1iOTFmLTU0NGE1OGFjMjg1Yg==",
                     verify_ssl_certs=False) as giga:
                 response = giga.chat(prompt_text)
-                bot_reply = response.choices[0].message.content  # Ответ от GigaChat
-                botTimeWeb.send_message(message.chat.id, bot_reply,
-                                        parse_mode='Markdown')  # Отправка ответа пользователю
+                print(prompt_text)
         except Exception as e:
             botTimeWeb.send_message(message.chat.id, f"Произошла ошибка вида: {e}. Попробуйте позже!")
             print(f"Произошла ошибка: {e}.")
