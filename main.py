@@ -235,8 +235,18 @@ def start_Giga(message):
                                 "Я пока не понимаю этой команды. Завершите тестирование, чтобы продолжить!")
 
 
+def print_Giga(message):
+    user_message = message  # Текст от пользователя
+    # Вызов GigaChat для получения ответа
+    with GigaChat(
+            credentials="YTdlZWNhNmEtNmIyMC00ZmYwLThjNWYtMWIzZmUyZDNiOTAyOmQyMDQxNTRjLTNlOGYtNGFmNy1iOTFmLTU0NGE1OGFjMjg1Yg==",
+            verify_ssl_certs=False) as giga:
+        response = giga.chat(user_message)
+        bot_reply = response.choices[0].message.content  # Ответ от GigaChat
+        print(bot_reply)
 # Запуск бота
 if __name__ == "__main__":
+    print_Giga('привет, какого цвета солнце?)')
     print("Бот запущен и ожидает сообщения...")
     try:
         botTimeWeb.polling(none_stop=True, interval=0)
