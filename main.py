@@ -15,6 +15,7 @@ prompt_text = ""
 google_docs_url = "https://docs.google.com/document/d/1itjBPTT3Dhw1ANRsw_Q8OtiyFl2hSK7RqX9Ogp4NCUQ/edit?usp=sharing"
 result_test = 'у пользователя нулевой уровень и знание языка'
 first_giga = 0
+
 # Функция для загрузки промпта из Google Docs
 def load_prompt(url):
     # Извлекаем ID документа из URL
@@ -24,8 +25,12 @@ def load_prompt(url):
     doc_id = match_.group(1)
 
     # Загружаем документ как обычный текст
-    response = requests.get(f'https://docs.google.com/document/d/{doc_id}/export?format=txt')
-    response.raise_for_status()  # Проверяем, что запрос успешен
+    try:
+        response = requests.get(f'https://docs.google.com/document/d/{doc_id}/export?format=txt')
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка при загрузке документа: {e}")
+        return ''
     text = response.text
     return text
 
@@ -123,10 +128,9 @@ def handle_query(call):
         user_scores[user_id] = 0  # Сброс баллов для нового теста
         ask_question(call.message.chat.id, user_id)
     elif call.data == 'nol':
-        botTimeWeb.send_message(call.message.chat.id, "Отлично, начинаем с нуля!")
+        botTimeWeb.send_message(call.message.chat.id, "Отлично, начинаем с нуля! Что конкретно тебя интересует?")
         user_status[user_id] = 'ready'  # Устанавливаем статус обучения
     elif call.data == 'marat':
-        start_Giga(result_test) #приди пжлст
         user_status[user_id] = 'ready'
     elif call.data in ['true', 'false']:
         check_answer(call)
@@ -204,11 +208,7 @@ def start_Giga(message):
     if first_giga == 0:
         first_giga = 1
         try:
-            with GigaChat(
-                    credentials="YTdlZWNhNmEtNmIyMC00ZmYwLThjNWYtMWIzZmUyZDNiOTAyOmQyMDQxNTRjLTNlOGYtNGFmNy1iOTFmLTU0NGE1OGFjMjg1Yg==",
-                    verify_ssl_certs=False) as giga:
-                response = giga.chat(prompt_text)
-                print(prompt_text)
+            print_Giga()
         except Exception as e:
             botTimeWeb.send_message(message.chat.id, f"Произошла ошибка вида: {e}. Попробуйте позже!")
             print(f"Произошла ошибка: {e}.")
@@ -235,18 +235,21 @@ def start_Giga(message):
                                 "Я пока не понимаю этой команды. Завершите тестирование, чтобы продолжить!")
 
 
-def print_Giga(message):
-    user_message = message  # Текст от пользователя
+
+# Функция запрашивает текст по промпту и выводит в консоль
+@botTimeWeb.message_handler(commands=['test'])
+def print_Giga():
+    global result_test, prompt_text
     # Вызов GigaChat для получения ответа
+    message = prompt_text + result_test
     with GigaChat(
             credentials="YTdlZWNhNmEtNmIyMC00ZmYwLThjNWYtMWIzZmUyZDNiOTAyOmQyMDQxNTRjLTNlOGYtNGFmNy1iOTFmLTU0NGE1OGFjMjg1Yg==",
             verify_ssl_certs=False) as giga:
-        response = giga.chat(user_message)
-        bot_reply = response.choices[0].message.content  # Ответ от GigaChat
-        print(bot_reply)
+        response = giga.chat(message)
+        print(response.choices[0].message.content, "при том, что мой уровень знаний:", result_test)  # Ответ от GigaChat
+
 # Запуск бота
 if __name__ == "__main__":
-    print_Giga('привет, какого цвета солнце?)')
     print("Бот запущен и ожидает сообщения...")
     try:
         botTimeWeb.polling(none_stop=True, interval=0)
