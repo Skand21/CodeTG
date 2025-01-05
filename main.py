@@ -15,7 +15,8 @@ prompt_text = ""
 google_docs_url = "https://docs.google.com/document/d/1itjBPTT3Dhw1ANRsw_Q8OtiyFl2hSK7RqX9Ogp4NCUQ/edit?usp=sharing"
 result_test = 'у пользователя нулевой уровень и знание языка'
 first_giga = 0
-
+main_information = ''
+bot_reply = ''
 # Функция для загрузки промпта из Google Docs
 def load_prompt(url):
     # Извлекаем ID документа из URL
@@ -128,6 +129,8 @@ def handle_query(call):
         user_scores[user_id] = 0  # Сброс баллов для нового теста
         ask_question(call.message.chat.id, user_id)
     elif call.data == 'nol':
+        global main_information
+        main_information = 'Я новичек и хочу изучать C++'
         botTimeWeb.send_message(call.message.chat.id, "Отлично, начинаем с нуля! Что конкретно тебя интересует?")
         user_status[user_id] = 'ready'  # Устанавливаем статус обучения
     elif call.data == 'marat':
@@ -154,6 +157,7 @@ def ask_question(chat_id, user_id):
         result = user_scores[user_id]
         botTimeWeb.send_message(chat_id, f"Тест завершен! Ваш результат: {result} / {len(questions)}")
         result_test = define_level(result)
+
         botTimeWeb.send_message(chat_id, result_test)
 
         neperv_mess = "КРАСАВА МАРАТ, ты прошёл тест, нажимай кнопку и начинай обучение"
@@ -190,13 +194,18 @@ def check_answer(call):
     ask_question(call.message.chat.id, user_id)
 
 def define_level(correctotveti):
+    global main_information
     if correctotveti == 1 or correctotveti == 2 or correctotveti == 3:
+        main_information = 'Я новичок и хочу изучать C++'
         return('Вы новичок')
     elif correctotveti == 4 or correctotveti == 5 or correctotveti == 6:
+        main_information = 'Я мало что знаю но хочу изучить C++'
         return('Вы знаете что-то, но вы далеко не Виталик Бутерин')
     elif correctotveti == 7 or correctotveti == 8:
+        main_information = 'Я опытный, но хочу глубже изучить C++'
         return('Вы много знаете, но есть ещё над чем работать')
     elif correctotveti == 9 or correctotveti == 10:
+        main_information = 'Я профи но хочу подтянуть свои знания в C++'
         return('Вы всё знаете! Для изучения нового ИИ выдаст вам самые сложные задачи')
 
 
@@ -204,7 +213,8 @@ def define_level(correctotveti):
 def start_Giga(message):
     global first_giga
     user_id = message.from_user.id
-
+    global main_information
+    global bot_reply
     if first_giga == 0:
         first_giga = 1
         try:
@@ -214,10 +224,11 @@ def start_Giga(message):
             print(f"Произошла ошибка: {e}.")
 
     if user_status.get(user_id) == 'ready':  # Проверяем, завершил ли пользователь тест
-        print("Включили тест с запросом:", message.text)
-        user_message = message.text  # Текст от пользователя
-        botTimeWeb.send_message(message.chat.id, "Ваш запрос отправляется на обработку...")
 
+        print("Включили тест с запросом:", message.text)
+        user_message = 'ОТВЕЧАЙ ТОЛЬКО ЗА 4 АБЗАЦА' + " " + message.text + ' ' + main_information + bot_reply  # Текст от пользователя
+        botTimeWeb.send_message(message.chat.id, "Ваш запрос отправляется на обработку...")
+        print(user_message)
         # Вызов GigaChat для получения ответа
         try:
             with GigaChat(
@@ -225,6 +236,9 @@ def start_Giga(message):
                     verify_ssl_certs=False) as giga:
                 response = giga.chat(user_message)
                 bot_reply = response.choices[0].message.content  # Ответ от GigaChat
+                bot_reply = bot_reply.replace('###', '')
+
+
                 botTimeWeb.send_message(message.chat.id, bot_reply,
                                         parse_mode='Markdown')  # Отправка ответа пользователю
         except Exception as e:
