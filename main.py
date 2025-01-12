@@ -17,6 +17,7 @@ result_test = 'у пользователя нулевой уровень и зн
 first_giga = 0
 main_information = ''
 bot_reply = ''
+
 # Функция для загрузки промпта из Google Docs
 def load_prompt(url):
     # Извлекаем ID документа из URL
