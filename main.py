@@ -6,7 +6,7 @@ import re
 
 botTimeWeb = telebot.TeleBot('7463534277:AAHZ29LmrJIwzFTPmJ5h-s1UzmjJ3Brzoi4')
 user_status = {}
-user_scores = {}  # Новый словарь для хранения баллов каждого пользователя
+user_scores = {}
 
 # Промпт (будет загружен из Google Docs)
 prompt_text = ""
@@ -35,9 +35,8 @@ def load_prompt(url):
     text = response.text
     return text
 
-
 # Загружаем промпт при старте бота (но не выводим его сразу пользователю)
-prompt_text = load_prompt(google_docs_url)
+load_prompt(google_docs_url)
 
 # Список вопросов и ответов
 questions = [
@@ -134,7 +133,9 @@ def handle_query(call):
         botTimeWeb.send_message(call.message.chat.id, "Отлично, начинаем с нуля! Что конкретно тебя интересует?")
         user_status[user_id] = 'ready'  # Устанавливаем статус обучения
     elif call.data == 'marat':
+        botTimeWeb.send_message(call.message.chat.id, "Отлично, начнем обучение C++! С чего ты хочешь начать?")
         user_status[user_id] = 'ready'
+
     elif call.data in ['true', 'false']:
         check_answer(call)
 
@@ -162,7 +163,7 @@ def ask_question(chat_id, user_id):
 
         neperv_mess = "КРАСАВА МАРАТ, ты прошёл тест, нажимай кнопку и начинай обучение"
         markup = types.InlineKeyboardMarkup()
-        button_obuchenijemarata = types.InlineKeyboardButton(text='НАЧАТЬ ОБУЧЕНИЕ', callback_data='marat')
+        button_obuchenijemarata = types.InlineKeyboardButton(text='Начать обучение', callback_data='marat')
         markup.add(button_obuchenijemarata)
 
         botTimeWeb.send_message(chat_id, neperv_mess, parse_mode='html', reply_markup=markup)
@@ -208,7 +209,6 @@ def define_level(correctotveti):
         main_information = 'Я профи но хочу подтянуть свои знания в C++'
         return('Вы всё знаете! Для изучения нового ИИ выдаст вам самые сложные задачи')
 
-
 @botTimeWeb.message_handler(content_types=['text'])
 def start_Giga(message):
     global first_giga
@@ -225,10 +225,12 @@ def start_Giga(message):
 
     if user_status.get(user_id) == 'ready':  # Проверяем, завершил ли пользователь тест
 
-        print("Включили тест с запросом:", message.text)
-        user_message = 'ОТВЕЧАЙ ТОЛЬКО ЗА 4 АБЗАЦА' + " " + message.text + ' ' + main_information + bot_reply  # Текст от пользователя
+        print("Сделан запрос боту:", message.text)
+        print("Запрос отправился на обработку...")
+
+        user_message = "Ответь на мой запрос:" + message.text + '. ' + main_information + '. ОТВЕЧАЙ КОРОТКО ЗА 4 АБЗАЦА.' + " " + "ПРЕДЫДУЩИМ СООБЩЕНИЕМ ТЫ МНЕ ВЫВЕЛ ТЕКСТ: " + bot_reply  # Текст от пользователя
         botTimeWeb.send_message(message.chat.id, "Ваш запрос отправляется на обработку...")
-        print(user_message)
+
         # Вызов GigaChat для получения ответа
         try:
             with GigaChat(
@@ -238,17 +240,16 @@ def start_Giga(message):
                 bot_reply = response.choices[0].message.content  # Ответ от GigaChat
                 bot_reply = bot_reply.replace('###', '')
 
-
                 botTimeWeb.send_message(message.chat.id, bot_reply,
                                         parse_mode='Markdown')  # Отправка ответа пользователю
+                botTimeWeb.delete_message(message.chat.id, message.message_id+1)
+                print("Ответ бота: " + bot_reply)
         except Exception as e:
             botTimeWeb.send_message(message.chat.id, f"Произошла ошибка вида: {e}. Попробуйте позже!")
             print(f"Произошла ошибка: {e}.")
     else:
         botTimeWeb.send_message(message.chat.id,
                                 "Я пока не понимаю этой команды. Завершите тестирование, чтобы продолжить!")
-
-
 
 # Функция запрашивает текст по промпту и выводит в консоль
 @botTimeWeb.message_handler(commands=['test'])
@@ -259,8 +260,7 @@ def print_Giga():
     with GigaChat(
             credentials="YTdlZWNhNmEtNmIyMC00ZmYwLThjNWYtMWIzZmUyZDNiOTAyOmQyMDQxNTRjLTNlOGYtNGFmNy1iOTFmLTU0NGE1OGFjMjg1Yg==",
             verify_ssl_certs=False) as giga:
-        response = giga.chat(message)
-        print(response.choices[0].message.content, "при том, что мой уровень знаний:", result_test)  # Ответ от GigaChat
+        giga.chat(message)
 
 # Запуск бота
 if __name__ == "__main__":
