@@ -4,42 +4,38 @@ from telebot import types
 import requests
 import re
 
+# Инициализация бота
 botTimeWeb = telebot.TeleBot('7463534277:AAHZ29LmrJIwzFTPmJ5h-s1UzmjJ3Brzoi4')
-user_status = {}
-user_scores = {}
 
-# Промпт (будет загружен из Google Docs)
-prompt_text = ""
+# Словари для хранения состояния пользователей
+user_status = {}  # Статус пользователя (тестирование, обучение и т.д.)
+user_scores = {}  # Баллы пользователей за тест
+current_question_index = {}  # Текущий вопрос в тесте
 
-# Ссылка на Google Docs документ с промптом
+# Промпт и ссылка на Google Docs
 google_docs_url = "https://docs.google.com/document/d/1itjBPTT3Dhw1ANRsw_Q8OtiyFl2hSK7RqX9Ogp4NCUQ/edit?usp=sharing"
-result_test = 'у пользователя нулевой уровень и знание языка'
-first_giga = 0
-main_information = ''
-bot_reply = ''
+prompt_text = ""  # Текст промпта будет загружен из Google Docs
 
 # Функция для загрузки промпта из Google Docs
 def load_prompt(url):
-    # Извлекаем ID документа из URL
+    """Загружает текст промпта из Google Docs."""
     match_ = re.search('/document/d/([a-zA-Z0-9-_]+)', url)
     if match_ is None:
         raise ValueError('Invalid Google Docs URL')
     doc_id = match_.group(1)
 
-    # Загружаем документ как обычный текст
     try:
         response = requests.get(f'https://docs.google.com/document/d/{doc_id}/export?format=txt')
         response.raise_for_status()
+        return response.text
     except requests.exceptions.RequestException as e:
         print(f"Ошибка при загрузке документа: {e}")
-        return ''
-    text = response.text
-    return text
+        return ""
 
-# Загружаем промпт при старте бота (но не выводим его сразу пользователю)
-load_prompt(google_docs_url)
+# Загружаем промпт при старте
+prompt_text = load_prompt(google_docs_url)
 
-# Список вопросов и ответов
+# Список вопросов и ответов для теста
 questions = [
     {"text": "Что такое переменная в C++?", "correct": "true", "answers": [
         {"text": "Переменная - это место в памяти, где хранится значение", "callback_data": "true"},
@@ -103,25 +99,68 @@ questions = [
     ]}
 ]
 
-# Переменная для отслеживания текущего вопроса
-current_question_index = {}
-
 # Обработка команды /start
 @botTimeWeb.message_handler(commands=['start'])
 def startBot(message):
+    """Обработка команды /start."""
     first_mess = f"Привет, <b>{message.from_user.first_name}</b>!\nЯ бот, который помогает с изучением языка С++ и отслеживает твой прогресс. Выберите, с чего хотите начать."
     markup = types.InlineKeyboardMarkup()
     button_hochutest = types.InlineKeyboardButton(text='Узнать свой уровень', callback_data='test')
     button_nehochutest = types.InlineKeyboardButton(text='Обучиться с нуля', callback_data='nol')
+    button_help = types.InlineKeyboardButton(text='Инструкция', callback_data='help')
 
-    markup.add(button_hochutest)
-    markup.add(button_nehochutest)
+    markup.add(button_hochutest, button_nehochutest, button_help)
     botTimeWeb.send_message(message.chat.id, first_mess, parse_mode='html', reply_markup=markup)
 
-# Обработка нажатия на кнопки "Узнать уровень" и "Обучиться с нуля"
+# Обработка команды /help
+@botTimeWeb.message_handler(commands=['help'])
+def help_command(message):
+    """Обработка команды /help."""
+    show_help(message.chat.id)
+
+def show_help(chat_id):
+    """Отправляет инструкцию по использованию бота."""
+    instruction = """
+    📚 Методичка-инструкция по использованию бота:
+
+    1. Запуск бота и начало работы:
+       - Напишите команду /start.
+       - Выберите одну из кнопок:
+         - "Узнать свой уровень" — пройти тест.
+         - "Обучиться с нуля" — начать обучение.
+
+    2. Прохождение теста:
+       - Бот задаст вам 10 вопросов по C++.
+       - Выбирайте правильные ответы, нажимая на кнопки.
+       - В конце теста бот покажет ваш результат и уровень знаний.
+
+    3. Начало обучения:
+       - После теста или выбора "Обучиться с нуля" бот готов отвечать на ваши вопросы.
+       - Задавайте вопросы, например: "Что такое указатели?" или "Как работают циклы?".
+
+    4. Использование функционала бота:
+       - Бот объясняет темы, помогает с заданиями и отвечает на вопросы.
+       - Вы можете уточнять: "Объясни подробнее" или "Ответь кратко".
+
+    5. Повторение и закрепление знаний:
+       - Попросите бота повторить тему: "Напомни про функции".
+       - Пройдите тест снова, чтобы проверить прогресс.
+
+    🚀 Советы:
+    - Если бот не понимает ваш запрос, переформулируйте его.
+    - Используйте команду /test, чтобы снова пройти тест.
+    """
+    markup = types.InlineKeyboardMarkup()
+    button_start = types.InlineKeyboardButton(text='Начать', callback_data='start')
+    button_test = types.InlineKeyboardButton(text='Пройти тест', callback_data='test')
+    button_learn = types.InlineKeyboardButton(text='Обучиться с нуля', callback_data='nol')
+    markup.add(button_start, button_test, button_learn)
+    botTimeWeb.send_message(chat_id, instruction, parse_mode='Markdown', reply_markup=markup)
+
+# Обработка нажатия на кнопки
 @botTimeWeb.callback_query_handler(func=lambda call: True)
 def handle_query(call):
-    global result_test
+    """Обработка нажатий на кнопки."""
     user_id = call.from_user.id
     if call.data == 'test':
         current_question_index[user_id] = 0  # Начинаем с первого вопроса
@@ -129,21 +168,20 @@ def handle_query(call):
         user_scores[user_id] = 0  # Сброс баллов для нового теста
         ask_question(call.message.chat.id, user_id)
     elif call.data == 'nol':
-        global main_information
-        main_information = 'Я новичек и хочу изучать C++'
-        botTimeWeb.send_message(call.message.chat.id, "Отлично, начинаем с нуля! Что конкретно тебя интересует?")
         user_status[user_id] = 'ready'  # Устанавливаем статус обучения
+        botTimeWeb.send_message(call.message.chat.id, "Отлично, начинаем с нуля! Что конкретно тебя интересует?")
     elif call.data == 'marat':
-        botTimeWeb.send_message(call.message.chat.id, "Отлично, начнем обучение C++! С чего ты хочешь начать?")
         user_status[user_id] = 'ready'
-
+    elif call.data == 'help':
+        show_help(call.message.chat.id)
+    elif call.data == 'start':
+        startBot(call.message)
     elif call.data in ['true', 'false']:
         check_answer(call)
 
-# Функция для задания вопроса
 def ask_question(chat_id, user_id):
+    """Задаёт пользователю следующий вопрос."""
     index = current_question_index.get(user_id, 0)
-    global result_test
     if index < len(questions):
         question = questions[index]
         text = question["text"]
@@ -154,27 +192,24 @@ def ask_question(chat_id, user_id):
             markup.add(types.InlineKeyboardButton(text=answer["text"], callback_data=answer["callback_data"]))
 
         botTimeWeb.send_message(chat_id, text, parse_mode='html', reply_markup=markup)
-
     else:
+        # Тест завершён
         result = user_scores[user_id]
-        botTimeWeb.send_message(chat_id, f"Тест завершен! Ваш результат: {result} / {len(questions)}")
         result_test = define_level(result)
-
+        botTimeWeb.send_message(chat_id, f"Тест завершен! Ваш результат: {result} / {len(questions)}")
         botTimeWeb.send_message(chat_id, result_test)
 
-        neperv_mess = "КРАСАВА МАРАТ, ты прошёл тест, нажимай кнопку и начинай обучение"
+        # Предложение начать обучение
         markup = types.InlineKeyboardMarkup()
-        button_obuchenijemarata = types.InlineKeyboardButton(text='Начать обучение', callback_data='marat')
+        button_obuchenijemarata = types.InlineKeyboardButton(text='НАЧАТЬ ОБУЧЕНИЕ', callback_data='marat')
         markup.add(button_obuchenijemarata)
+        botTimeWeb.send_message(chat_id, "КРАСАВА МАРАТ, ты прошёл тест, нажимай кнопку и начинай обучение", parse_mode='html', reply_markup=markup)
 
-        botTimeWeb.send_message(chat_id, neperv_mess, parse_mode='html', reply_markup=markup)
-
-# Функция для проверки ответа
 def check_answer(call):
+    """Проверяет ответ пользователя и переходит к следующему вопросу."""
     user_id = call.from_user.id
     index = current_question_index.get(user_id, 0)
 
-    # Проверка, что индекс находится в пределах списка вопросов
     if index >= len(questions):
         botTimeWeb.send_message(call.message.chat.id, "Тест завершен!")
         botTimeWeb.send_message(call.message.chat.id, define_level(user_scores[user_id]))
@@ -184,10 +219,9 @@ def check_answer(call):
     botTimeWeb.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
 
     correct_answer = questions[index]["correct"]
-
     if call.data == correct_answer:
         botTimeWeb.send_message(call.message.chat.id, "Правильный ответ!")
-        user_scores[user_id] += 1  # Увеличиваем баллы для конкретного пользователя
+        user_scores[user_id] += 1
     else:
         botTimeWeb.send_message(call.message.chat.id, "Неправильный ответ.")
 
@@ -196,72 +230,35 @@ def check_answer(call):
     ask_question(call.message.chat.id, user_id)
 
 def define_level(correctotveti):
-    global main_information
-    if correctotveti == 1 or correctotveti == 2 or correctotveti == 3:
-        main_information = 'Я новичок и хочу изучать C++'
-        return('Вы новичок')
-    elif correctotveti == 4 or correctotveti == 5 or correctotveti == 6:
-        main_information = 'Я мало что знаю но хочу изучить C++'
-        return('Вы знаете что-то, но вы далеко не Виталик Бутерин')
-    elif correctotveti == 7 or correctotveti == 8:
-        main_information = 'Я опытный, но хочу глубже изучить C++'
-        return('Вы много знаете, но есть ещё над чем работать')
-    elif correctotveti == 9 or correctotveti == 10:
-        main_information = 'Я профи но хочу подтянуть свои знания в C++'
-        return('Вы всё знаете! Для изучения нового ИИ выдаст вам самые сложные задачи')
+    """Определяет уровень пользователя на основе количества правильных ответов."""
+    if correctotveti <= 3:
+        return "Вы новичок"
+    elif 4 <= correctotveti <= 6:
+        return "Вы знаете что-то, но вы далеко не Виталик Бутерин"
+    elif 7 <= correctotveti <= 8:
+        return "Вы много знаете, но есть ещё над чем работать"
+    elif correctotveti >= 9:
+        return "Вы всё знаете! Для изучения нового ИИ выдаст вам самые сложные задачи"
 
+# Обработка текстовых сообщений
 @botTimeWeb.message_handler(content_types=['text'])
-def start_Giga(message):
-    global first_giga
+def handle_text(message):
+    """Обработка текстовых сообщений."""
     user_id = message.from_user.id
-    global main_information
-    global bot_reply
-    if first_giga == 0:
-        first_giga = 1
-        try:
-            print_Giga()
-        except Exception as e:
-            botTimeWeb.send_message(message.chat.id, f"Произошла ошибка вида: {e}. Попробуйте позже!")
-            print(f"Произошла ошибка: {e}.")
-
     if user_status.get(user_id) == 'ready':  # Проверяем, завершил ли пользователь тест
-
-        print("Сделан запрос боту:", message.text)
-        print("Запрос отправился на обработку...")
-
-        user_message = "Ответь на мой запрос:" + message.text + '. ' + main_information + '. ОТВЕЧАЙ КОРОТКО ЗА 4 АБЗАЦА.' + " " + "ПРЕДЫДУЩИМ СООБЩЕНИЕМ ТЫ МНЕ ВЫВЕЛ ТЕКСТ: " + bot_reply  # Текст от пользователя
+        user_message = f"ОТВЕЧАЙ ТОЛЬКО ЗА 4 АБЗАЦА. {message.text}"
         botTimeWeb.send_message(message.chat.id, "Ваш запрос отправляется на обработку...")
 
-        # Вызов GigaChat для получения ответа
         try:
-            with GigaChat(
-                    credentials="YTdlZWNhNmEtNmIyMC00ZmYwLThjNWYtMWIzZmUyZDNiOTAyOmQyMDQxNTRjLTNlOGYtNGFmNy1iOTFmLTU0NGE1OGFjMjg1Yg==",
-                    verify_ssl_certs=False) as giga:
+            with GigaChat(credentials="YTdlZWNhNmEtNmIyMC00ZmYwLThjNWYtMWIzZmUyZDNiOTAyOmQyMDQxNTRjLTNlOGYtNGFmNy1iOTFmLTU0NGE1OGFjMjg1Yg==", verify_ssl_certs=False) as giga:
                 response = giga.chat(user_message)
-                bot_reply = response.choices[0].message.content  # Ответ от GigaChat
+                bot_reply = response.choices[0].message.content
                 bot_reply = bot_reply.replace('###', '')
-
-                botTimeWeb.send_message(message.chat.id, bot_reply,
-                                        parse_mode='Markdown')  # Отправка ответа пользователю
-                botTimeWeb.delete_message(message.chat.id, message.message_id+1)
-                print("Ответ бота: " + bot_reply)
+                botTimeWeb.send_message(message.chat.id, bot_reply, parse_mode='Markdown')
         except Exception as e:
-            botTimeWeb.send_message(message.chat.id, f"Произошла ошибка вида: {e}. Попробуйте позже!")
-            print(f"Произошла ошибка: {e}.")
+            botTimeWeb.send_message(message.chat.id, f"Произошла ошибка: {e}. Попробуйте позже!")
     else:
-        botTimeWeb.send_message(message.chat.id,
-                                "Я пока не понимаю этой команды. Завершите тестирование, чтобы продолжить!")
-
-# Функция запрашивает текст по промпту и выводит в консоль
-@botTimeWeb.message_handler(commands=['test'])
-def print_Giga():
-    global result_test, prompt_text
-    # Вызов GigaChat для получения ответа
-    message = prompt_text + result_test
-    with GigaChat(
-            credentials="YTdlZWNhNmEtNmIyMC00ZmYwLThjNWYtMWIzZmUyZDNiOTAyOmQyMDQxNTRjLTNlOGYtNGFmNy1iOTFmLTU0NGE1OGFjMjg1Yg==",
-            verify_ssl_certs=False) as giga:
-        giga.chat(message)
+        botTimeWeb.send_message(message.chat.id, "Завершите тестирование, чтобы продолжить!")
 
 # Запуск бота
 if __name__ == "__main__":
